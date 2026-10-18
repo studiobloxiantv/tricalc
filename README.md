@@ -1,4 +1,4 @@
-# Tricalc
+# Tricalc - calculator for methods
 
 A PWA calculator with a keypad, light/dark mode, and written-method working displayed above the calculator.
 
