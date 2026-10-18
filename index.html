@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2457c5">
+<meta name="description" content="Tricalc: a calculator that shows UK primary and Year 7 written maths methods.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="https://cdn-icons-png.flaticon.com/256/9122/9122761.png">
+<title>Tricalc</title>
+<style>
+:root{color-scheme:light;--blue:#2457c5;--accent:#2457c5;--ink:#17233b;--muted:#64748b;--paper:#fff;--bg:#f2f5fb;--line:#dce5f3;--key:#f4f7fc;--display:#edf3ff;--shadow:#1b37600c}
+:root[data-theme="dark"]{color-scheme:dark;--blue:#8eafff;--accent:#9db8ff;--ink:#edf2ff;--muted:#a6b2c9;--paper:#171e2c;--bg:#0e1420;--line:#303c51;--key:#222d40;--display:#202c42;--shadow:#00000030}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;transition:background .15s,color .15s}
+header{background:#2457c5;color:white;padding:16px 18px}header .wrap,main,footer{max-width:900px;margin:auto}.brand{display:flex;align-items:center;gap:12px}.brand img{width:42px;height:42px;object-fit:contain;border-radius:10px;background:white;padding:3px}h1{font-size:1.65rem;margin:0}header p{margin:2px 0 0;opacity:.9;font-size:.92rem}
+main{padding:16px;display:grid;gap:14px}.panel{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 5px 18px var(--shadow)}.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}h2{font-size:1.05rem;margin:0}.theme{border:1px solid var(--line);background:var(--key);color:var(--ink);padding:8px 11px;border-radius:10px;font-weight:700}
+.display{background:var(--display);border-radius:14px;padding:14px;margin-bottom:12px;text-align:right;min-height:95px;display:flex;flex-direction:column;justify-content:center;gap:3px}.expression{color:var(--muted);font-size:1rem;overflow-wrap:anywhere;min-height:1.4em}.screen{font-size:clamp(2rem,8vw,3rem);font-weight:800;line-height:1.1;overflow-wrap:anywhere}
+.keypad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.key{min-height:58px;border:1px solid var(--line);border-radius:13px;background:var(--key);color:var(--ink);font-size:1.25rem;font-weight:750;box-shadow:0 2px 0 var(--line);touch-action:manipulation}.key:active{transform:translateY(1px);box-shadow:none}.key.op{color:var(--accent);background:var(--display)}.key.eq{background:var(--blue);color:white;border-color:var(--blue)}.key.clear{font-size:1rem}.method-title{font-weight:800;margin-bottom:7px}.working{overflow-x:auto}.math{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre;line-height:1.65;font-size:clamp(1rem,3vw,1.25rem);padding:14px;border-radius:12px;background:var(--display);min-width:max-content}.explain{color:var(--muted);font-size:.9rem;margin:9px 0 0}.empty{color:var(--muted);padding:16px 4px}.footer{max-width:900px;padding:0 16px 24px;color:var(--muted);font-size:.84rem}
+@media(min-width:760px){main{grid-template-columns:minmax(280px,370px) 1fr;align-items:start}.calc-panel{position:sticky;top:12px}.key{min-height:64px}}
+</style>
+</head>
+<body>
+<header><div class="wrap brand"><img src="https://cdn-icons-png.flaticon.com/256/9122/9122761.png" alt=""><div><h1>Tricalc</h1><p>Written maths calculator</p></div></div></header>
+<main>
+<section class="panel calc-panel">
+<div class="topbar"><h2>Calculator</h2><button class="theme" id="theme" type="button">☾ Dark mode</button></div>
+<div class="display" aria-live="polite"><div id="expression" class="expression">Ready</div><div id="screen" class="screen">0</div></div>
+<div class="keypad" id="keypad">
+<button class="key clear" data-action="clear">AC</button><button class="key clear" data-action="delete">⌫</button><button class="key op" data-value="÷">÷</button><button class="key op" data-value="×">×</button>
+<button class="key" data-value="7">7</button><button class="key" data-value="8">8</button><button class="key" data-value="9">9</button><button class="key op" data-value="−">−</button>
+<button class="key" data-value="4">4</button><button class="key" data-value="5">5</button><button class="key" data-value="6">6</button><button class="key op" data-value="+">+</button>
+<button class="key" data-value="1">1</button><button class="key" data-value="2">2</button><button class="key" data-value="3">3</button><button class="key eq" data-action="equals">=</button>
+<button class="key" data-action="sign">+/−</button><button class="key" data-value="0">0</button><button class="key" data-action="decimal">.</button><button class="key" data-action="equals">↵</button>
+</div>
+<p class="explain">Use the keypad like a normal calculator. The written method appears above the calculator after you press equals.</p>
+</section>
+<section class="panel">
+<div class="topbar"><h2>Written working</h2><span id="method-label" class="expression">Waiting for a calculation</span></div>
+<div id="working" class="empty">Enter a calculation and press = to see the book method, including carrying and exchanges where needed.</div>
+</section>
+</main>
+<footer class="footer">Written layouts can vary slightly between schools. Tricalc shows a visual method for whole-number addition, subtraction, multiplication and division. Calculations involving decimals are evaluated normally, but written working is currently intended for whole numbers.</footer>
+<script>
+const $=id=>document.getElementById(id);
+let current='0', stored=null, operator=null, waiting=false, lastExpression='', theme='light';
+const fmt=n=>Number(n).toLocaleString('en-GB',{maximumFractionDigits:10});
+function render(){ $('screen').textContent=current; $('expression').textContent=stored!==null&&operator?`${fmt(stored)} ${operator} ${current==='0'&&waiting?'':current}`.trim():(lastExpression||'Ready');}
+function inputDigit(d){if(waiting){current=d;waiting=false}else if(current==='0')current=d;else if(current.replace('-','').length<14)current+=d;render()}
+function chooseOp(op){if(operator&&stored!==null&&!waiting)compute(false);stored=Number(current);operator=op;waiting=true;lastExpression='';render()}
+function clearAll(){current='0';stored=null;operator=null;waiting=false;lastExpression='';$('working').className='empty';$('working').textContent='Enter a calculation and press = to see the book method, including carrying and exchanges where needed.';$('method-label').textContent='Waiting for a calculation';render()}
+function doMath(a,b,op){if(op==='+')return a+b;if(op==='−')return a-b;if(op==='×')return a*b;if(op==='÷')return a/b}
+function setWorking(a,b,op,result){
+ const whole=Number.isInteger(a)&&Number.isInteger(b)&&Number.isInteger(result)&&Math.abs(a)<=99999999&&Math.abs(b)<=99999999;
+ $('method-label').textContent=whole?({'+':'Column addition','−':'Column subtraction','×':'Long multiplication','÷':'Bus-stop division'}[op]||'Written working'):'Calculator result';
+ if(!whole){$('working').className='empty';$('working').textContent='Answer: '+fmt(result)+'. Written book layouts are shown for whole-number calculations.';return}
+ let content='';
+ if(op==='+')content=additionWork(a,b);
+ else if(op==='−')content=subtractionWork(a,b);
+ else if(op==='×')content=multiplicationWork(a,b);
+ else if(op==='÷')content=divisionWork(a,b);
+ $('working').className='working';$('working').innerHTML=content;
+}
+function frame(lines){return `<div class="math">${lines.join('\n')}</div>`}
+function additionWork(a,b){
+ if(a<0||b<0)return `<div class="math">${a} + ${b} = ${a+b}</div>`;
+ let A=String(a).split('').reverse().map(Number),B=String(b).split('').reverse().map(Number),n=Math.max(A.length,B.length),carry=0, carries=Array(n).fill(' '), resultDigits=[],notes=[];
+ for(let i=0;i<n;i++){let x=A[i]||0,y=B[i]||0,s=x+y+carry;resultDigits.push(s%10);if(s>=10){carry=Math.floor(s/10);carries[i]=String(carry)}else carry=0;notes.push(`${x} + ${y}${carries[i]!==' '?` = ${s}, write ${s%10} and carry ${carries[i]}`:` = ${s}`}`)}
+ if(carry)resultDigits.push(carry);
+ let result=Number(resultDigits.reverse().join('')), width=Math.max(String(a).length,String(b).length,String(result).length)+1;
+ let carryLine=' '+carries.slice().reverse().join('').padStart(width-1);
+ return frame([carryLine,String(a).padStart(width),('+ '+b).padStart(width),'-'.repeat(width),String(result).padStart(width)])+`<p class="explain">Carry digits are shown above the columns. Add from right to left: ${notes.join('; ')}.</p>`;
+}
+function subtractionWork(a,b){
+ if(a<0||b<0||a<b)return `<div class="math">${fmt(a)} − ${fmt(b)} = ${fmt(a-b)}</div><p class="explain">The answer is negative, so the usual positive column exchange layout does not apply.</p>`;
+ let digits=String(a).split('').map(Number), sub=String(b).split('').map(Number), n=Math.max(digits.length,sub.length), start=digits.slice(), exchange=Array(n).fill(' '), notes=[];
+ digits=digits.map((v,i)=>v);
+ let padA=String(a).padStart(n,'0').split('').map(Number),padB=String(b).padStart(n,'0').split('').map(Number);
+ for(let i=n-1;i>=0;i--){if(padA[i]<padB[i]){let j=i-1;while(j>=0&&padA[j]===0)j--;if(j>=0){padA[j]--;for(let k=j+1;k<i;k++)padA[k]=9;padA[i]+=10;exchange[i]=String(padA[i]);notes.push(`Exchange: ${start[i]} becomes ${padA[i]} in the ${10**(n-i-1)}s column.`)}}}
+ let result=a-b,width=n+1;
+ return frame([exchange.join('').padStart(width),String(a).padStart(width),('− '+b).padStart(width),'-'.repeat(width),String(result).padStart(width)])+`<p class="explain">Exchange marks appear above columns that needed borrowing. Subtract each column from right to left. ${notes.join(' ')}</p>`;
+}
+function multiplicationWork(a,b){
+ if(a<0||b<0)return `<div class="math">${fmt(a)} × ${fmt(b)} = ${fmt(a*b)}</div>`;
+ let digs=String(b).split('').reverse(),parts=digs.map((d,i)=>a*Number(d)*10**i),r=a*b,w=String(r).length+1;
+ let lines=[String(a).padStart(w),('× '+b).padStart(w),'-'.repeat(w),...parts.map((p,i)=>(i?'+ ':'  ')+fmt(p)).reverse(),'-'.repeat(w),fmt(r).padStart(w)];
+ return frame(lines)+`<p class="explain">Multiply by each digit of ${b}, keeping its place value, then add the partial products.</p>`;
+}
+function divisionWork(a,b){
+ if(a<0||b<0||b===0)return `<div class="math">${fmt(a)} ÷ ${fmt(b)} = ${fmt(a/b)}</div>`;
+ let q=Math.floor(a/b),rem=a%b, digits=String(a).split(''), carry=0,quot='',rows=[];
+ for(let ch of digits){let cur=carry*10+Number(ch),d=Math.floor(cur/b);carry=cur%b;quot+=d;rows.push(`${cur} ÷ ${b} = ${d}${carry?' r '+carry:''}`)}
+ quot=quot.replace(/^0+(?=\\d)/,'');
+ return frame([(' '+quot),`${b} ⟌ ${a}`,' '.repeat(String(b).length)+'  '+rows.map(x=>'').join('')])+`<p class="explain">Bus stop, left to right: ${rows.join('; ')}. Answer: ${fmt(q)}${rem?' remainder '+rem:''}.</p>`;
+}
+function compute(show=true){if(operator===null)return;let a=stored,b=Number(current),op=operator;if(op==='÷'&&b===0){current='Cannot divide by 0';stored=null;operator=null;waiting=true;render();return}let result=doMath(a,b,op);lastExpression=`${fmt(a)} ${op} ${fmt(b)} =`;current=String(Number(result.toPrecision(12)));stored=null;operator=null;waiting=true;render();if(show)setWorking(a,b,op,result)}
+$('keypad').addEventListener('click',e=>{const btn=e.target.closest('button');if(!btn)return;const val=btn.dataset.value,action=btn.dataset.action;if(val!==undefined){if('0123456789'.includes(val))inputDigit(val);else if(val==='.') {if(waiting){current='0.';waiting=false}else if(!current.includes('.'))current+='.';render()}else chooseOp(val);return}if(action==='clear')clearAll();else if(action==='delete'){if(!waiting)current=current.length>1?current.slice(0,-1):'0';render()}else if(action==='sign'){if(current!=='0'&&!current.startsWith('Cannot'))current=current.startsWith('-')?current.slice(1):'-'+current;render()}else if(action==='equals'){if(operator!==null)compute(true)}});
+$('theme').addEventListener('click',()=>{theme=theme==='light'?'dark':'light';document.documentElement.dataset.theme=theme;$('theme').textContent=theme==='light'?'☾ Dark mode':'☀ Light mode';document.querySelector('meta[name="theme-color"]').content=theme==='light'?'#2457c5':'#0e1420'});
+document.addEventListener('keydown',e=>{if(/^[0-9]$/.test(e.key))inputDigit(e.key);else if(e.key==='.')$('keypad').querySelector('[data-action="decimal"]').click();else if(e.key==='Enter'||e.key==='=')$('keypad').querySelector('[data-action="equals"]').click();else if(e.key==='Escape')clearAll();else if(e.key==='Backspace')$('keypad').querySelector('[data-action="delete"]').click();else if(e.key==='+')chooseOp('+');else if(e.key==='-')chooseOp('−');else if(e.key==='*')chooseOp('×');else if(e.key==='/'){e.preventDefault();chooseOp('÷')}});
+if('serviceWorker'in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+render();
+</script>
+</body></html>
